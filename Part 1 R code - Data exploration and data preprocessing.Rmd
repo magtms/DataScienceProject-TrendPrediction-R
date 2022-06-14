@@ -27,7 +27,6 @@ df <- read_csv("R project Data.csv")
 ```{r Data Structure Checking}
 # Check the data structure
 str(df)
-
 summary(df)
 
 ```
