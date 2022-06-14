@@ -27,10 +27,8 @@ df <- read_csv("R project Data.csv")
 ```{r Data Structure Checking}
 # Check the data structure
 str(df)
-<img width="764" alt="image" src="https://user-images.githubusercontent.com/104416151/173534556-609e24f9-0277-4351-824e-b3bec8de626b.png">
 
 summary(df)
-<img width="685" alt="image" src="https://user-images.githubusercontent.com/104416151/173534681-071bf105-920d-4b68-9cd8-ddbb8d18952d.png">
 
 ```
 
