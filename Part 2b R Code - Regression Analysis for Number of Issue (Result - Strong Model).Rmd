@@ -6,7 +6,6 @@ output: html_document
 ---
 
 ```{r Regression - Relationship btwn number of issue & features}
-
 # To find the relationship between number of issue vs all features
 
 # Use grouping and inner join to find the number of project and number of issue per month [2016 to 2021]
