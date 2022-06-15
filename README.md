@@ -1,12 +1,11 @@
 # DataAnalyticsProject-R-programming
 Welcome to my first data analysis project using R! Feedback or comment all welcomed! :)
 
-The repository contains a real-world data analytics project with target business objectives of a technology company. 
-Key objectives of the project is to:
+The repository contains a real-world data analytics project with target business objectives of a technology company. Topic focusing on the issue (or bugs) raised from the company's operation systems, key objectives of the project is to:
 
 **[1] Find out the impact of the new upgrade to the existing systems**
 
-**[2] Trend prediction for future 3 periods based on the data after  the new upgrade.** 
+**[2] Trend prediction on the number of issue raised for future 3 periods based on the data after the new upgrade.** 
 
 Please read the background below for detailed explanation. 
 
