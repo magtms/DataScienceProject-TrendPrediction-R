@@ -15,9 +15,10 @@ Company A is a Singapore's leading technology company with various software appl
 
 #### **4 phases of the project:**
 1. Data exploration and data preprocessing
-2. Regression analysis 
-3. Time Series Forecasting - Time Series Regression, ARIMA, SARIMA
-4. Data Visualization
+2. Impact of the new upgrade to the existing systems
+3. Regression analysis between the number of issue and the features
+4. Time series forecasting on number of issue - Time series regression, ARIMA, SARIMA
+
 
 #### **Project Tools:**
 1. R & R Studio - data exploration, data preprocessing and data analysis. 
