@@ -1,0 +1,264 @@
+---
+title: "Phase 1 R code - Data exploration and data preprocessing"
+author: "Magtms"
+date: '2022-06-14'
+output: html_document
+---
+
+```{r Get Ready}
+# Set directory
+setwd("C:/Users/tanma/Documents/Practical project/Showcase")
+getwd()
+
+
+# Install packages
+install.packages("pacman")
+pacman::p_load(pacman,dplyr,ggplot2,tidyverse,rio,lubridate,
+               here,skimr,janitor,magrittr,gsubfn,kableExtra,DT,shiny,
+               forecast,tseries,fUnitRoots,tidyverse,lmtest,fastDummies,pracma,
+               urca,car)
+
+
+# Read raw dataset in csv
+df <- read_csv("R project Data.csv")
+
+```
+
+```{r Data Structure Checking}
+# Check the data structure
+str(df)
+summary(df)
+
+
+```
+
+```{r Data Cleaning}
+
+## Data cleaning 1: Issue Key ------------------------------------------------#
+
+# Count the number of projects 
+length(unique(df$Project))    # 304 projects
+
+
+# Check the uniqueness of ID
+length(unique(df$ID))
+duplicated(df$ID)
+sum(duplicated(df$ID))   # 805 duplicates in ID
+
+
+# Remove duplicates in the dataset (by finding the duplicates in ID)
+df <- df %>% 
+  distinct(ID, .keep_all = TRUE)
+length(unique(df$ID))         # left 174,494 rows in the file
+sum(duplicated(df$ID))      # ensure no duplicate items 
+
+
+
+## Data cleaning 2: Created Date ----------------------------------------------#
+# Convert the created date to "date" type
+class(df$CreatedDate)   # class is "character"
+is.Date(df$CreatedDate)
+
+df$CreatedDate <- dmy_hm(df$CreatedDate)
+df$c.created.date <- as.Date(df$CreatedDate, format = "%d/%m/%y $h:$m")
+class(df$c.created.date)   # class changed to "Date"
+
+
+# As the project is focus on timeline of issue created, hence this step also removing data without created date in record.
+sum(is.na(df$c.created.date)) # total 1,093 na in created date
+df <- df[complete.cases(df[ , 17]),] # remove row with NA in created date
+dim(df) # [1] 173401     17
+
+
+## Data cleaning 3: Resolved Date ---------------------------------------------#
+# Convert the resolved date to "date" type
+class(df$Resolved)    # class is "character
+is.Date(df$Resolved)
+
+df$Resolved <- dmy_hm(df$Resolved)
+df$c.resolved.date <- as.Date(df$Resolved, format = "%d/%m/%y $h:$m")
+class(df$c.resolved.date)
+dim(df)   # [1] 173401     18
+
+# Check NA in resolved date
+ResolvedDateNA <- which(is.na(df$c.resolved.date))
+df[ResolvedDateNA,]     # total 3,870 row with na in resolved date
+# NA in Resolved date may due to item in progress, keep for analysis. 
+
+
+## Data cleaning 4: Processing Day --------------------------------------------#
+# Create new column for number of processing days required to closed the issue and convert the type to integer
+df <- df %>% 
+  mutate(processing.day = df$c.resolved.date - df$c.created.date + 1)
+class(df$processing.day)
+
+df$processing.day <- as.numeric(df$processing.day, units="days")
+class(df$processing.day)
+
+
+## Data cleaning 5: Country ---------------------------------------------------#
+# Standardize the name for country
+unique(df$Country)   # name is not standardized, eg, HK vs Hong Kong
+
+df$Country %<>% 
+  gsub('H Kong','Hong Kong',.) %>%
+  gsub('HK','Hong Kong',.) %>%
+  gsub('New York','USA',.) %>% 
+  gsub('Los Angeles','USA',.)
+
+unique(df$Country)   # left 19 unique country, including NULL
+
+# Check number of item with NULL in Country
+sum(df$Country == "NULL")    # 12,588 row having NULL, keep for analysis.
+
+
+
+## Data cleaning 6: Resolution ------------------------------------------------#
+# Standardize the name for resolution   **Resolution type is masked**
+unique(df$Resolution)     # 13 types of resolution with similar nature
+
+df$resolution <- df$Resolution %>%  
+  gsub("Resolution12","Resolution1",.) %>% 
+  gsub("Resolution13","Resolution1",.) %>%
+  gsub("REsolution2","Resolution2",.) %>% 
+  gsub("Resolution3","Resolution2",.) %>%
+  gsub("Resolution5","Resolution2",.) %>%
+  gsub("Resolution6","Resolution2",.) %>%
+  gsub("Resolution8","Resolution3",.) %>%
+  gsub("Resolution7","Resolution4",.) %>%
+  gsub("Resolution9","Resolution4",.) %>%
+  gsub("Resolution10","Resolution4",.) %>%
+  gsub("Resolution11","Resolution5",.)
+
+unique(df$resolution)    # left 5 main types of resolutions
+
+
+
+## Data cleaning 7: Priority --------------------------------------------------#
+# Check priority type
+unique(df$Priority)
+
+
+
+## Data cleaning 8: System -----------------------------------------------#
+# Created new column for each system for better analysis.
+# Standardize the system name, as the system field is free field, hence there are various system name indicated.    **System name is masked**
+
+# 1. SystemA
+df$systemA <- ifelse(grepl("SystemA", df$System, ignore.case = TRUE), 
+                      1, ifelse(grepl("SystemA2", df$System, ignore.case = TRUE),
+                                1, ifelse(grepl("SystemABCD", df$System, ignore.case = FALSE),
+                                          1, ifelse(grepl("SystemABC", df$System, ignore.case = TRUE),
+                                      1, 0))))
+sum(df$systemA == 1)    # 2,958 in SystemA
+
+  
+# 2. SystemB
+df$systemB <- ifelse(grepl("SystemB", df$System, ignore.case = TRUE),
+                      1, ifelse(grepl("SystemABC", df$System, ignore.case = FALSE),
+                                1, ifelse(grepl("SystemABCD", df$System, ignore.case = TRUE),
+                                1, 0)))
+sum(df$systemB == 1)    # 67,533 in SystemB
+  
+
+# 3. SystemC
+df$systemC <- ifelse(grepl("SystemC", df$System, ignore.case = TRUE),
+                      1, ifelse(grepl("SystemC2", df$System,, ignore.case = TRUE),
+                                1, ifelse(grepl("SystemABC", df$System, ignore.case = FALSE),
+                                          1, ifelse(grepl("SystemABCD", df$System, ignore.case = TRUE),
+                                1, 0))))
+sum(df$systemC == 1)    # 48,317 in SystemC
+
+  
+# 4. SystemD
+df$systemD <- ifelse(grepl("SystemD|SystemD2|SystemD3",df$System, ignore.case = TRUE),
+                       1, ifelse(grepl("SystemABCD", df$System, ignore.case = FALSE),
+                               1, 0))
+sum(df$systemD == 1)    # 2,153 in SystemD
+
+  
+# 5. Count the unknown system, create new column for item with unknown system
+sum(df$systemA + df$systemB + df$systemC + df$systemD == 0)  # 55,597 item with unknown system
+  
+
+# 6. Unknown system
+# To set condition: Fill the unknown system only if the rest of system column is 0
+df$unknwon.system <- ifelse (df$systemA + df$systemB + df$systemC + df$systemD == 0, 
+                                       (ifelse(grepl("NA", df$System, ignore.case = FALSE),
+                                              1, (ifelse(grepl("NULL", df$System, ignore.case = FALSE),
+                                                         1, 0)))),0)
+sum(df$unknwon.system == 1)    # 42,132 unknown
+  
+
+# 7. Count the remaining item in system (not belongs to system A,B,C,D or unknown)
+sum(df$systemA + df$systemB + df$systemC + df$systemD + df$unknwon.system == 0)  # 13,465
+## Assumption made: classify these under SystemD as the comments are tends to related to SystemD
+  
+df$assume.systemD <- ifelse(df$systemA + df$systemB + df$systemC + df$systemD + df$unknwon.system == 0,
+                       1, 0)
+sum(df$assume.systemD == 1)     # 13,465 assumed in SystemD
+  
+
+# 8. Clean up the PROD environment
+df$all.systemD <- ifelse (df$systemD + df$assume.systemD > 0,
+                            1, 0)
+sum(df$all.systemD == 1)     # total 15,618 in SystemD
+
+
+```
+
+```{r Dataset Preparation}
+# Prepare datasets for Phase 2 and Phase 3 analysis use
+# Entire cleaned dataset from Jan 2016 to mid of May 2021
+data <- df
+  
+# Entire dataset start from Jan 2016 to Apr 2021 (remove May21 for analysis as data for May is now complete)
+data2016 <- df %>%
+  dplyr::filter(c.created.date >= "2016-01-01") %>% 
+  dplyr::filter(c.created.date <= "2021-04-30")        # [161,343 x 27]
+  
+# Dataset - 17mths before new function.  **17 mths is a user's defined analysis period**
+data.bef17 <- df %>%
+  dplyr::filter(c.created.date >= "2018-07-01") %>% 
+  dplyr::filter(c.created.date <= "2019-11-30")         # [62,571 x 27] 
+  
+# Dataset - 17mths after new function.   **17 mths is a user's defined analysis period**
+data.aft17 <- df %>%
+  dplyr::filter(c.created.date >= "2019-12-01") %>% 
+  dplyr::filter(c.created.date <= "2021-04-30")         # [48,670 x 27] 
+
+
+# Dataset without "NA" in resolution date (unclosed issue) - for processing days analysis use)
+# As if the topic is focus in number of processing days, the unclosed issue can be rested for analysis. 
+closed <- df[-ResolvedDateNA,]
+str(closed)                             # [169,531 x 27] 
+  
+# Closed dataset from 2016 to Apr 2021 (remove May21 for analysis as data for May is now complete
+closed2016 <- closed %>%
+  dplyr::filter(c.created.date >= "2016-01-01") %>% 
+  dplyr::filter(c.created.date <= "2021-04-30")       # [158,272 x 27] 
+  
+# Closed dataset - before new function 
+closed2016to2019 <- closed %>%
+  dplyr::filter(c.created.date >= "2016-01-01") %>% 
+  dplyr::filter(c.created.date <= "2019-11-30")    # [112,114 x 27]
+  
+# Closed dataset - 17mths before new function
+closed.bef17 <- closed %>%
+  dplyr::filter(c.created.date >= "2018-07-01") %>% 
+  dplyr::filter(c.created.date <= "2019-11-30")    # [62,198 x 27]
+  
+# Closed dateste - 17mths after new function
+closed.aft17 <- closed %>%
+  dplyr::filter(c.created.date >= "2019-12-01") %>% 
+  dplyr::filter(c.created.date <= "2021-04-30")      # [46,158 x 27]
+  
+# Zoom in country - China (Country to be focus as per user's request)
+# China's data after new function
+cn <- c("China")
+cn.data <- df %>%
+  dplyr::filter(c.created.date >= "2019-12-01") %>% 
+  dplyr::filter(c.created.date <= "2021-04-30") %>% 
+  dplyr::filter(Country %in% cn)                      # [18,405 x 27]
+
+```
