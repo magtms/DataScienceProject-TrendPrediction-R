@@ -1,0 +1,241 @@
+---
+title: "Phase 3 - R code - Dataset preparation for time series analysis"
+author: "Magtms"
+date: '2022-06-20'
+output: html_document
+---
+
+```{r Time Series - Dataset Preparation}
+# Prepare datasets for Phase 3 time series analysis use
+# Find the number of issue per month from Jan 2016 to Apr 2021 (remove May21 for analysis as data for May is now complete)
+month <- data2016 %>%
+  group_by(month = lubridate::floor_date(c.created.date, "month")) %>%
+  summarize(total = length(ID))
+
+# Plot the number of issue per month, check the trend
+month %>%
+  ggplot(aes(x=month,y=total)) +
+  geom_line(color="navy") + 
+  labs(x = "", y = "",
+       title = "Trend of' Issue for the period from year 2016 to 2021") +
+  theme(text=element_text(size=12,  family="Arial"))
+
+
+# Dataset with number of issue [per month] - after the new upgrade
+month.2019 <- data.aft17 %>% 
+  group_by(period = lubridate::floor_date(c.created.date, "month")) %>%
+  summarize(total = length(ID))
+
+is.Date(month.2019$period)
+
+month.2019 <- month.2019 %>% 
+  mutate(month = strftime(month.2019$period,"%m"))
+
+
+# Dataset with number of issue [per week] - after the new upgrade 
+week <- data.aft17 %>% 
+  group_by(period = lubridate::floor_date(c.created.date, "week")) %>%
+  summarize(total = length(ID))
+
+is.Date(week$period)
+
+week <- week %>% 
+  mutate(week = strftime(period, format="%V"))
+
+
+# Dataset with number of issue [per day] - after the new upgrade
+day <- data.aft17 %>% 
+  group_by(period = lubridate::floor_date(c.created.date, "day")) %>%
+  summarize(total = length(ID))
+
+is.Date(day$period)
+
+day <- day %>% 
+  mutate(day = strftime(period, format="%j"))
+
+
+
+# zoom in countries - China
+# Dataset with number of issue [per month] - after the new upgrade
+cn.month <- cn.data%>% 
+  group_by(period = lubridate::floor_date(c.created.date, "month")) %>%
+  summarize(total = length(ID))
+
+is.Date(cn.month$period)
+
+cn.month <- cn.month %>% 
+  mutate(month = strftime(cn.month$period,"%m"))
+
+
+# Dataset with number of issue [per week] - after the new upgrade
+cn.week <- cn.data %>% 
+  group_by(period = lubridate::floor_date(c.created.date, "week")) %>%
+  summarize(total = length(ID))
+
+is.Date(cn.week$period)
+
+cn.week <- cn.week %>% 
+  mutate(cn.week = strftime(period, format="%V"))
+
+
+
+# Dataset with number of issue [per day] - after the new upgrade
+cn.day <- cn.data %>% 
+  group_by(period = lubridate::floor_date(c.created.date, "day")) %>%
+  summarize(total = length(ID))
+
+is.Date(cn.day$period)
+
+cn.day <- cn.day %>% 
+  mutate(cn.day = strftime(period, format="%j"))
+
+```
+
+
+```{r Time Series - Convert dataset to time series}
+
+# Dataset [by month]:
+# Convert dataset into Time Series data format
+total.issue=month.2019$total
+tstotal.issue = ts(total.issue, frequency = 12, start = c(2019, 12))
+tstotal.issue
+
+# > tstotal.issue
+#       Jan  Feb  Mar  Apr  May  Jun  Jul  Aug  Sep  Oct  Nov  Dec 
+# 2019                                                        2171
+# 2020 2489 2636 2872 1490 2138 2638 2883 3149 3368 3622 3535 3173
+# 2021 2644 2534 3285 4043   
+
+
+# Split the monthly data to test and train set
+training = subset(tstotal.issue, end=length(tstotal.issue)-3)
+test = subset(tstotal.issue, start=length(tstotal.issue)-2) 
+
+# > training
+#       Jan  Feb  Mar  Apr  May  Jun  Jul  Aug  Sep  Oct  Nov  Dec
+# 2019                                                        2171
+# 2020 2489 2636 2872 1490 2138 2638 2883 3149 3368 3622 3535 3173
+# 2021 2644      
+
+# > test
+#       Feb  Mar  Apr
+# 2021 2534 3285 4043
+
+
+
+# Dataset [by week]:
+# Convert datasets into Time Series data format
+tsw.issue = ts(week$total, frequency = 52, start = c(2019, 48)) 
+tsw.issue
+
+# > tsw.issue
+# Time Series:
+# Start = c(2019, 48) 
+# End = c(2021, 17) 
+# Frequency = 52 
+#   [1]  477  533  542  476  378  550  655  601  464  749  723  575  573  699  804  616  536
+#  [18]  500  218  315  348  357  449  592  600  462  546  612  657  560  638  572  631  666
+#  [35]  663  758  707  792  726  754  726  760  807  780  680  943  865  821  904  937  701
+#  [52]  852  778  746  842  494  463  798  632  624  567  608  571  689  667  770  655  692
+#  [69]  720  755  984 1032  882  851
+
+
+# Split the weekly data to test and train set
+w.training = subset(tsw.issue, end=length(tsw.issue)-13)
+w.test = subset(tsw.issue, start=length(tsw.issue)-12)
+
+# > w.training
+# Time Series:
+# Start = c(2019, 48) 
+# End = c(2021, 4) 
+# Frequency = 52 
+#  [1] 477 533 542 476 378 550 655 601 464 749 723 575 573 699 804 616 536 500 218 315 348 357
+# [23] 449 592 600 462 546 612 657 560 638 572 631 666 663 758 707 792 726 754 726 760 807 780
+# [45] 680 943 865 821 904 937 701 852 778 746 842 494 463 798 632 624 567
+
+# > w.test
+# Time Series:
+# Start = c(2021, 5) 
+# End = c(2021, 17) 
+# Frequency = 52 
+#  [1]  608  571  689  667  770  655  692  720  755  984 1032  882  851
+
+
+# Dataset [by day]:
+# Convert datasets into Time Series data format
+tsd.issue = ts(day$total, frequency = 365, start = c(2019, 335), end = c(2021,120))
+tsd.issue
+
+# > tsd.issue
+# Time Series:
+# Start = c(2019, 335) 
+# End = c(2021, 120) 
+# Frequency = 365 
+#   [1]   1  94  98 112  85  85   2   9  83 125 115  96 104   1   2  93 124 115 123  83   2   1
+#  [23] 125  64  10 147 125   4  87  56  80 141  14  98 109 123  92 118  10 103 128 122 122 173
+#  [45]   7   1 133 104 116 165  82   5  91 123  99 130  16   2 129 171 160 128 143  16   3 124
+#  [67] 156 150 141 121  28  19 139 137  91  92  86  11  10  99 126 112 115 101  10   1 118 103
+#  [89] 139 201 102  35   6 145 228 142 172 105   6  13  96 101 127 128 129  22  34 117  96  81
+# [111] 100 102   6   4 124  89 109  91  75   8   1  81  51  60  23   1   1  79  40  52  78  63
+# [133]   3   3  63  82  66  76  48  10  76  50 108  92  22   9  80  96  93  44 117  19   9 111
+# [155] 109 120 144  87  12  10 135 112 132 102  98  11  11  15 107  69 125  94  41   4 109 101
+# [177] 109 112  88  23   8  89 139 129 116 101  30  11  86 118 138 157 126  21  11  88 124  96
+# [199] 122 108  11  11 148 108 132 119 103  17  14 122  88 152 141  45  10  15  93 156 121 110
+# [221] 132   4  14 143 119 122 104 124  40  34 187 142 147 121  12  20  16 146 156 145 141 132
+# [243]  22  26  56 127 178 170 136  14  31 153 146 158 129 164  11  19 104 153 148 168 127   7
+# [265]  34 112 157 159 141 133  18  15 118 143 170 140 118  22  18 140 129 122 126 172  53  22
+# [287] 172 154 139 139 160  21  26 151 158 132 137 137  39  19 116 136 117 137 143  12  28 204
+# [309] 206 213 149 134   9  34 153 165 139 160 162  52  29 156 148 158 175 142  13  11 126 154
+# [331] 176 206 194  37 108 148 233 181 146 112   9  20 123 132 124 180  90  32  24 142 125 189
+# [353] 190 123  59  17 124 160 151 137 126  63  24  86 126 180 148 149  33  26 174 144 186 161
+# [375] 124  27   5 118 121 142 100   8  16 105 124 109 100   9  10 166 235 133 114 102  38  26
+# [397] 102  93 123 141 144   3  22 152 138 118  85  95  14  19 100  98 101 107 116  26  14  79
+# [419] 139 110 133  99  34  22 158 166 119 102   4   2 118 134 134 144 141  16  25 133 116 135
+# [441] 117 108  33  13 133 133 161 153 165  12  18 137 145 124 116 105  10  10 135 129 168 123
+# [463] 117  10   7 134 153 125 150 137  14   8 146 163 144 189  93  12   2 188 176 206 164 195
+# [485]  53  63 218 204 179 149 142  77  27 148 179 213 145 150  20  41 207 175 154 103 171   1
+# [507]  94  98 112  85  85   2   9  83 125 115
+
+
+# Split the daily data to test and train set
+d.training = subset(tsd.issue, end=length(tsd.issue)-89)
+d.test = subset(tsd.issue, start=length(tsd.issue)-88) 
+
+# > d.training
+# Time Series:
+# Start = c(2019, 335) 
+# End = c(2021, 31) 
+# Frequency = 365 
+#   [1]   1  94  98 112  85  85   2   9  83 125 115  96 104   1   2  93 124 115 123  83   2   1
+#  [23] 125  64  10 147 125   4  87  56  80 141  14  98 109 123  92 118  10 103 128 122 122 173
+#  [45]   7   1 133 104 116 165  82   5  91 123  99 130  16   2 129 171 160 128 143  16   3 124
+#  [67] 156 150 141 121  28  19 139 137  91  92  86  11  10  99 126 112 115 101  10   1 118 103
+#  [89] 139 201 102  35   6 145 228 142 172 105   6  13  96 101 127 128 129  22  34 117  96  81
+# [111] 100 102   6   4 124  89 109  91  75   8   1  81  51  60  23   1   1  79  40  52  78  63
+# [133]   3   3  63  82  66  76  48  10  76  50 108  92  22   9  80  96  93  44 117  19   9 111
+# [155] 109 120 144  87  12  10 135 112 132 102  98  11  11  15 107  69 125  94  41   4 109 101
+# [177] 109 112  88  23   8  89 139 129 116 101  30  11  86 118 138 157 126  21  11  88 124  96
+# [199] 122 108  11  11 148 108 132 119 103  17  14 122  88 152 141  45  10  15  93 156 121 110
+# [221] 132   4  14 143 119 122 104 124  40  34 187 142 147 121  12  20  16 146 156 145 141 132
+# [243]  22  26  56 127 178 170 136  14  31 153 146 158 129 164  11  19 104 153 148 168 127   7
+# [265]  34 112 157 159 141 133  18  15 118 143 170 140 118  22  18 140 129 122 126 172  53  22
+# [287] 172 154 139 139 160  21  26 151 158 132 137 137  39  19 116 136 117 137 143  12  28 204
+# [309] 206 213 149 134   9  34 153 165 139 160 162  52  29 156 148 158 175 142  13  11 126 154
+# [331] 176 206 194  37 108 148 233 181 146 112   9  20 123 132 124 180  90  32  24 142 125 189
+# [353] 190 123  59  17 124 160 151 137 126  63  24  86 126 180 148 149  33  26 174 144 186 161
+# [375] 124  27   5 118 121 142 100   8  16 105 124 109 100   9  10 166 235 133 114 102  38  26
+# [397] 102  93 123 141 144   3  22 152 138 118  85  95  14  19 100  98 101 107 116  26  14  79
+# [419] 139 110 133  99  34  22 158 166 119
+
+# > d.test
+# Time Series:
+# Start = c(2021, 32) 
+# End = c(2021, 120) 
+# Frequency = 365 
+#  [1] 102   4   2 118 134 134 144 141  16  25 133 116 135 117 108  33  13 133 133 161 153 165
+# [23]  12  18 137 145 124 116 105  10  10 135 129 168 123 117  10   7 134 153 125 150 137  14
+# [45]   8 146 163 144 189  93  12   2 188 176 206 164 195  53  63 218 204 179 149 142  77  27
+# [67] 148 179 213 145 150  20  41 207 175 154 103 171   1  94  98 112  85  85   2   9  83 125
+# [89] 115
+
+```
