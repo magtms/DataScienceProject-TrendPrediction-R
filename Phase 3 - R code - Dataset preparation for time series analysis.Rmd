@@ -55,7 +55,7 @@ day <- day %>%
 
 
 
-# zoom in countries - China
+# zoom in country - China
 # Dataset with number of issue [per month] - after the new upgrade
 cn.month <- cn.data%>% 
   group_by(period = lubridate::floor_date(c.created.date, "month")) %>%
