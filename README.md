@@ -1,5 +1,4 @@
 # DataAnalyticsProject-TrendPrediction-R
-Welcome to my first data analysis project using R! Feedback or comment all welcomed! :)
 
 The repository contains a data analytics project with target business objectives of an e-commerce company. Topic focusing on the issue (or bugs) raised from the company's operation systems, key objectives of the project is to:
 
