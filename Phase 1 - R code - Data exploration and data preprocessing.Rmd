@@ -1,5 +1,5 @@
 ---
-title: "Phase 1 R code - Data exploration and data preprocessing"
+title: "Phase 1 R code - Data exploration, mining and preprocessing"
 author: "Magtms"
 date: '2022-06-14'
 output: html_document
