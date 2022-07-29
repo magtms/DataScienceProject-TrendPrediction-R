@@ -1,6 +1,6 @@
 # DataAnalyticsProject-TrendPrediction-R
 
-The repository contains a data analytics project with target business objectives of an e-commerce company. Topic focusing on the issue (or bugs) raised from the company's operation systems, key objectives of the project is to:
+The repository contains a data science project with target business objectives of an e-commerce company. Topic focusing on the issue (or bugs) raised from the company's operation systems, key objectives of the project is to:
 
 **[1] Find out the impact of the new upgrade to the existing systems**
 
